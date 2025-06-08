@@ -54,25 +54,16 @@ class WindowsWindowFinder(WindowFinder):
     def find_window(self, window_name: str) -> tuple[int, int, int, int]:
         try:
             import win32gui
-            import win32process
 
-            def callback(hwnd, extra):
-                if win32gui.IsWindowVisible(hwnd):
-                    window_title = win32gui.GetWindowText(hwnd).lower()
-                    if window_name in window_title:
-                        # (left, top, right, bottom)
-                        rect = win32gui.GetWindowRect(hwnd)
-                        window_region = (
-                            rect[0],
-                            rect[1],
-                            rect[2] - rect[0],
-                            rect[3] - rect[1],
-                        )
-                        print(f"Brogue 윈도우 찾음: {self.window_region}")
-                        return window_region
-                return None
-
-            win32gui.EnumWindows(callback, None)
+            window_handle = win32gui.FindWindow(None, window_name)
+            rect = win32gui.GetWindowRect(window_handle)  # left, top, right, bottom
+            rect_ltwh = (
+                rect[0],  # left
+                rect[1],  # top
+                rect[2] - rect[0],  # width
+                rect[3] - rect[1],  # height
+            )
+            return rect_ltwh
 
         except ImportError:
             print("Windows 관련 라이브러리 import 실패")
