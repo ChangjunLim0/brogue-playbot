@@ -34,4 +34,8 @@ class BrogueActionMapper(ActionMapper):
         "MOVE_DOWN": [PressCommand(key="down")],
         "MOVE_LEFT": [PressCommand(key="left")],
         "MOVE_RIGHT": [PressCommand(key="right")],
+        "REST": [PressCommand(key="z")],
+        "SEARCH": [PressCommand(key="s")],
+        "EXPLORE": [PressCommand(key="x")],
+        "INVENTORY": [PressCommand(key="i")],
     }
