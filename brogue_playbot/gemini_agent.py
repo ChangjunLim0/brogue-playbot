@@ -180,19 +180,63 @@ class GeminiVLMAgent(GeminiAgent):
         }
 
         prompt = """
-        당신은 Brogue 게임 화면 분석 전문가입니다. 다음 이미지에서 게임 상태를 분석하여 JSON 형식으로 알려주세요.
-        JSON에는 다음 키들이 포함되어야 합니다:
-        - "player_health": 플레이어의 현재 체력 (예: "25/30" 또는 숫자)
-        - "player_hunger": 플레이어의 허기 상태 (예: "Normal", "Hungry", "Starving")
-        - "current_depth": 현재 깊이 (예: "Depth: 3")
-        - "messages": 최근 게임 메시지 (화면 하단 등, 배열 형태)
-        - "visible_enemies": 보이는 적들의 목록. 각 적은 이름, 상대적 위치(예: "북동쪽 고블린")를 포함. (예: [{"name": "goblin", "location_desc": "2시 방향"}])
-        - "visible_items": 바닥에 보이는 아이템 목록. 각 아이템은 이름, 상대적 위치를 포함. (예: [{"name": "dagger", "location_desc": "발 밑"}])
-        - "inventory_snippet": 인벤토리의 주요 아이템 몇 가지 (예: ["healing potion", "dagger", "scroll of identify?"])
-        - "map_description": 플레이어 주변 지형에 대한 간략한 설명 (예: "좁은 복도, 북쪽에 문이 보임")
+You are an expert AI game analyst. Your task is to analyze the provided screenshot of the roguelike game "Brogue" and extract the game's current state into a structured JSON format.
 
-        최대한 정확하고 간결하게, 요청한 JSON 형식으로만 답변해주세요.
-        만약 특정 정보를 읽을 수 없다면, 해당 키의 값으로 null 또는 빈 배열/문자열을 사용하세요.
+You must follow these rules precisely:
+
+Analyze the entire game screen to gather all required information.
+Output ONLY a valid JSON object. Do not include any other text, explanations, or markdown formatting like ```json.
+Here is the required JSON structure and instructions for each field:
+
+JSON Structure:
+
+JSON
+{
+  "player_status": {
+    "health_percent": 0,
+    "nutrition_percent": 0,
+    "strength": 0,
+    "armor": 0,
+    "stealth_range": 0
+  },
+  "game_info": {
+    "depth": 0,
+    "messages": []
+  },
+  "relative_grid_9x9": [],
+  "crucial_info": [],
+  "ground_items": []
+}
+Instructions for each field:
+
+player_status: Extract the player's stats from the top-left panel.
+
+health_percent, nutrition_percent: Estimate the percentage (0-100) based on the fullness of the 'Health' and 'Nutrition' bars.
+strength, armor, stealth_range: Extract the numerical values for 'Str', 'Armor', and 'Stealth range'.
+game_info: Extract general game information.
+
+depth: Get the current dungeon depth from the bottom-left of the screen.
+messages: Get the last 2-3 messages from the log in the top-right panel. The most recent message should be the first element in the list.
+relative_grid_9x9: Create a 9x9 grid of strings, centered on the player character (@).
+
+The grid must represent the area immediately surrounding the player. The player (@) is always at the center [4][4].
+Map the game symbols to the following string values:
+"#" -> "WALL"
+." -> "FLOOR"
+"+" -> "DOOR"
+"~" -> "WATER"
+"@" -> "PLAYER"
+Any item symbol (*, [, /, ?, %, )) -> "ITEM"
+Any monster symbol (r, k, j, e, etc.) -> "MONSTER"
+Unseen/black areas -> "UNSEEN"
+Stairs (>, <) -> "STAIRS"
+crucial_info: Identify all monsters and stairs anywhere on the visible map, even if they are outside the 9x9 grid. This is a list of objects.
+
+For each found entity, create an object with type, symbol, and position.
+type: Can be "MONSTER" or "STAIRS_DOWN".
+symbol: The character on the map (e.g., "k", ">").
+position: The absolute x, y coordinates of the entity on the map grid. Assume the top-left corner of the map view is (0,0).
+ground_items: Extract the list of items at the player's location from the panel to the left of the map. This should be a list of strings, exactly as they appear.
         """
         return self.generate_json(prompt, image=image, json_schema=game_state_schema)
 
