@@ -47,9 +47,7 @@ class GeminiAgent:
         try:
             return json.loads(json_text)
         except json.JSONDecodeError as e:
-            print(
-                f"JSON 파싱 오류: {e}\n원본 텍스트: {json_text[:500]}..."
-            )  # 너무 길면 잘라서 출력
+            print(f"JSON 파싱 오류: {e}\n원본 텍스트: {json_text[:500]}...")
             return None
 
     def generate(
@@ -244,31 +242,54 @@ ground_items: Extract the list of items at the player's location from the panel 
 class GeminiPolicyAgent(GeminiAgent):
     def generate_content(self, game_state: dict) -> dict | None:
         game_state_str = json.dumps(game_state, indent=2, ensure_ascii=False)
-        # Policy 프롬프트: 이전과 동일하게 유지, 필요시 수정
         prompt = f"""
-        당신은 Brogue 게임을 아주 잘하는 AI 에이전트입니다.
-        현재 게임 상태는 다음과 같습니다:
-        {game_state_str}
+You are an expert AI player for the roguelike game "Brogue". Your primary goal is to survive and explore the dungeon to find the stairs leading to the next level.
 
-        다음 중 가장 적절한 행동 하나를 선택하여 그 명령어를 반환해주세요.
-        가능한 행동 명령어 형식 (Brogue 기본 키 기준, 실제 키에 맞게 수정 필요):
-        - 이동: "move k" (북), "move j" (남), "move h" (서), "move l" (동), "move y", "move u", "move b", "move n" (대각선)
-        - 공격: "attack <방향키>" (예: "attack h" - 왼쪽에 있는 적 공격. 실제로는 'f' 누르고 방향키)
-        - 아이템 줍기: "pickup" (,)
-        - 인벤토리 열기: "inventory" (i)
-        - 아이템 사용/읽기/마시기: "quaff <아이템문자>", "read <아이템문자>", "zap <아이템문자>" (q, r, z)
-        - 계단 내려가기: "go_down" (>)
-        - 대기: "wait" (.)
+You will be given the current game state as a single JSON object. Your task is to analyze this state and choose the single best action to take next from a strictly limited list of available actions.
 
-        최우선 순위:
-        1. 체력이 30% 미만이고 회복 아이템이 있다면 사용하세요. (예: "quaff a" - a가 힐링포션일 경우)
-        2. 배고픔 상태(Hungry, Starving)이고 음식이 있다면 먹으세요.
-        3. 바로 옆에 적이 있다면 공격하세요. 위험하면 도망가세요.
-        4. 유용한 아이템이 바닥에 있다면 주우세요.
-        5. 주변을 탐험하세요. 아직 가지 않은 곳으로 이동하거나, 문이 있으면 열어보세요.
-        6. 위험한 상황이거나 뚜렷한 할 일이 없으면 "wait" 하세요.
+Here is the JSON object.
+{game_state_str}
 
-        가장 적절한 행동 명령어 하나만 반환해주세요. (예: "move k")
+Available Actions:
+
+You must choose one of the following six actions:
+
+MOVE_UP
+MOVE_DOWN
+MOVE_LEFT
+MOVE_RIGHT
+SEARCH
+REST
+Your Response:
+
+Your entire response must be a single word from the list above. Do not include any other text, JSON, or explanations.
+
+Strategic Priorities:
+
+To make your decision, follow these priorities in order:
+
+Immediate Survival (Highest Priority):
+
+If your player_status.health_percent is below 70%, your top priority is to heal.
+Choose REST only if there are no monsters in your relative_grid_9x9 or crucial_info list. If there are monsters nearby, it is too dangerous to rest. In that case, move away from the threat.
+Threat Avoidance:
+
+If there is a monster right next to you (e.g., at [4][3], [4][5], [3][4], or [5][4] in the relative_grid_9x9), you must move away from it to a safe position. Prioritize moving to a tile that is not adjacent to any monster.
+Exploration and Objectives:
+
+If you are safe, your goal is to explore.
+Check the crucial_info list. If you see "type": "STAIRS_DOWN", your main goal is to move towards its coordinates.
+If there are no stairs in sight, check the relative_grid_9x9 for ITEM tiles. Move towards the nearest item.
+If no specific objectives are visible, move towards the nearest "FLOOR" tile that is adjacent to an "UNSEEN" tile to uncover more of the map.
+Dealing with Dead Ends:
+
+If you are surrounded by WALL or UNSEEN tiles and have no obvious path forward (i.e., you are in a dead end), choose SEARCH. This is useful for finding secret doors.
+Default Action:
+
+If none of the above conditions provides a clear choice, simply continue exploring by moving towards the nearest "UNSEEN" area.
+Task:
+
+Based on the following game state, what is your next action?
         """
         try:
             print("Policy 모델에 행동 결정 요청 중...")
