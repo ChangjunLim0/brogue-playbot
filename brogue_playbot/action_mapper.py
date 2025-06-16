@@ -30,10 +30,14 @@ class ActionMapper(ABC):
 
 class BrogueActionMapper(ActionMapper):
     ACTION_MAP = {
-        "MOVE_UP": [PressCommand(key="up")],
-        "MOVE_DOWN": [PressCommand(key="down")],
-        "MOVE_LEFT": [PressCommand(key="left")],
-        "MOVE_RIGHT": [PressCommand(key="right")],
+        "MOVE_UP": [PressCommand(key="k")],
+        "MOVE_DOWN": [PressCommand(key="j")],
+        "MOVE_LEFT": [PressCommand(key="h")],
+        "MOVE_RIGHT": [PressCommand(key="l")],
+        "MOVE_UP_LEFT": [PressCommand(key="y")],
+        "MOVE_UP_RIGHT": [PressCommand(key="u")],
+        "MOVE_DOWN_LEFT": [PressCommand(key="b")],
+        "MOVE_DOWN_RIGHT": [PressCommand(key="n")],
         "REST": [PressCommand(key="z")],
         "SEARCH": [PressCommand(key="s")],
         "EXPLORE": [PressCommand(key="x")],
