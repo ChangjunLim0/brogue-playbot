@@ -11,8 +11,9 @@ from brogue_playbot.windows_finder import MacWindowFinder, WindowsWindowFinder
 
 
 class BrogueBot:
-    def __init__(self, image_directory: str = "data"):
+    def __init__(self, interval: float = 0.5, image_directory: str = "data"):
         self.step_count = 0
+        self.interval = interval
         system = platform.system()
         if system == "Darwin":  # macOS
             self.windows_finder = MacWindowFinder()
@@ -31,20 +32,20 @@ class BrogueBot:
         self.image_directory = os.path.join(image_directory, bot_index)
         os.makedirs(self.image_directory, exist_ok=True)
 
-    def run(self):
+    def run(self, steps: int = 100):
         brogue_window_region = self.windows_finder.find_window("brogue")
         if not brogue_window_region:
             print("Brogue 윈도우를 찾을 수 없습니다.")
             return
 
         self.screen_capturer.set_region(brogue_window_region)
-
-        while True:
+        self.step_count = 0
+        while self.step_count < steps:
             self.step(brogue_window_region)
-            time.sleep(1)
-
+            time.sleep(self.interval)
+            self.step_count += 1
             # TODO: 게임 종료 조건 추가
-            break
+            
         print(f"Bot ended in {self.step_count} steps")
 
     def step(self, brogue_window_region):
