@@ -70,9 +70,13 @@ class PressCommand(Command):
 
 
 @dataclass
-class KeyUpDownCommand(Command):
+class KeyUpCommand(Command):
     key: str
-    action: str  # 'down' 또는 'up'
+
+
+@dataclass
+class KeyDownCommand(Command):
+    key: str
 
 
 @dataclass
@@ -117,7 +121,8 @@ class WaitCommand(Command):
 
 COMMAND_TYPES: dict[str, Type[Command]] = {
     "press": PressCommand,
-    "keyupdown": KeyUpDownCommand,
+    "keyup": KeyUpCommand,
+    "keydown": KeyDownCommand,
     "click": ClickCommand,
     "move": MoveCommand,
     "drag": DragCommand,

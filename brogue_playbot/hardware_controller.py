@@ -23,11 +23,10 @@ class HardwareController:
 
         if isinstance(command, PressCommand):
             pyautogui.press(command.key)
-        elif isinstance(command, KeyUpDownCommand):
-            if command.action == "down":
-                pyautogui.keyDown(command.key)
-            elif command.action == "up":
-                pyautogui.keyUp(command.key)
+        elif isinstance(command, KeyUpCommand):
+            pyautogui.keyUp(command.key)
+        elif isinstance(command, KeyDownCommand):
+            pyautogui.keyDown(command.key)
         elif isinstance(command, ClickCommand):
             if command.button == MouseButton.LEFT:
                 if command.clicks == 1:
