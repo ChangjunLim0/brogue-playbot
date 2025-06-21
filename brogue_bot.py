@@ -37,8 +37,8 @@ class BrogueBot:
         else:
             raise ValueError(f"지원하지 않는 운영체제: {system}")
         self.screen_capturer = ScreenCapturer()
-        self.vlm_agent = GeminiVLMAgent()
-        self.policy_agent = GeminiPolicyAgent()
+        self.vlm_agent = GeminiVLMAgent("gemini-2.0-flash-lite")
+        self.policy_agent = GeminiPolicyAgent("gemini-2.0-flash-lite")
         self.action_mapper = BrogueActionMapper()
         self.hardware_controller = HardwareController()
 
@@ -48,6 +48,9 @@ class BrogueBot:
         os.makedirs(self.image_directory, exist_ok=True)
 
     def run(self, steps: int = 100):
+        logger.info(
+            f"Start Brogue bot with VLM({self.vlm_agent.default_model}) and policy ({self.policy_agent.default_model})"
+        )
         brogue_window_region = self.windows_finder.find_window("brogue")
         if not brogue_window_region:
             logger.warning("Can't find Brogue Window")
