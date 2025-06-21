@@ -43,7 +43,6 @@ class BrogueBot:
         while self.step_count < steps:
             self.step(brogue_window_region)
             time.sleep(self.interval)
-            self.step_count += 1
             # TODO: 게임 종료 조건 추가
             
         print(f"Bot ended in {self.step_count} steps")
