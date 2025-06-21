@@ -27,9 +27,12 @@ class ModelResponseParsingError(GeminiAPIError):
 
 
 class GeminiAgent:
-    def __init__(self, api_key: str | None = None):
+    def __init__(
+        self, api_key: str | None = None, default_model: str = "gemini-1.5-flash-latest"
+    ):
         load_dotenv()
         self.client = genai.Client(api_key=api_key)
+        self.default_model = default_model
 
     def _parse_json_from_response(self, response_text: str) -> dict | None:
         """Parse JSON object from LLM response."""
@@ -53,13 +56,15 @@ class GeminiAgent:
     def generate(
         self,
         prompt: str,
-        model_name: str = "gemini-1.5-flash-latest",
+        model_name: str = None,
         image: Image.Image | None = None,
         config=None,
     ) -> str | None:
         """Send text generation request with optional image."""
         try:
             content = [prompt, image] if image else prompt
+            if model_name is None:
+                model_name = self.default_model
             response = self.client.models.generate_content(
                 model=model_name, contents=content, config=config
             )
@@ -80,7 +85,7 @@ class GeminiAgent:
     def generate_json(
         self,
         prompt: str,
-        model_name: str = "gemini-1.5-flash-latest",
+        model_name: str = None,
         image: Image.Image | None = None,
         json_schema=None,
     ) -> dict | None:
@@ -105,6 +110,9 @@ class GameState(BaseModel):
 
 
 class GeminiVLMAgent(GeminiAgent):
+    def __init__(self, llm_model: str = "gemini-1.5-flash-latest"):
+        super().__init__(default_model=llm_model)
+
     def generate_content(self, image: Image.Image) -> dict | None:
         game_state_schema = {
             "type": "object",
@@ -240,6 +248,9 @@ ground_items: Extract the list of items at the player's location from the panel 
 
 
 class GeminiPolicyAgent(GeminiAgent):
+    def __init__(self, default_model="gemini-1.5-flash-latest"):
+        super().__init__(default_model=default_model)
+
     def generate_content(self, game_state: dict) -> dict | None:
         game_state_str = json.dumps(game_state, indent=2, ensure_ascii=False)
         prompt = f"""
