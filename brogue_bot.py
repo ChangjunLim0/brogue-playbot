@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 import platform
@@ -8,6 +9,20 @@ from brogue_playbot.hardware_controller import HardwareController
 from brogue_playbot.gemini_agent import GeminiVLMAgent, GeminiPolicyAgent
 from brogue_playbot.screen_capturer import ScreenCapturer
 from brogue_playbot.windows_finder import MacWindowFinder, WindowsWindowFinder
+
+formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter)
+stream_handler.setLevel(logging.INFO)
+file_handler = logging.FileHandler("brogue.log")
+file_handler.setFormatter(formatter)
+file_handler.setLevel(logging.INFO)
+
+logger = logging.getLogger("brogue-bot")
+logger.addHandler(stream_handler)
+logger.addHandler(file_handler)
+logger.setLevel(logging.INFO)
+logger.propagate = False
 
 
 class BrogueBot:
@@ -35,7 +50,7 @@ class BrogueBot:
     def run(self, steps: int = 100):
         brogue_window_region = self.windows_finder.find_window("brogue")
         if not brogue_window_region:
-            print("Brogue 윈도우를 찾을 수 없습니다.")
+            logger.warning("Can't find Brogue Window")
             return
 
         self.screen_capturer.set_region(brogue_window_region)
@@ -43,9 +58,10 @@ class BrogueBot:
         while self.step_count < steps:
             self.step(brogue_window_region)
             time.sleep(self.interval)
+            logger.info(f"Start {self.step_count} step")
             # TODO: 게임 종료 조건 추가
-            
-        print(f"Bot ended in {self.step_count} steps")
+
+        logger.info(f"Bot ended in {self.step_count} steps")
 
     def step(self, brogue_window_region):
         self.screen_capturer.set_region(brogue_window_region)
@@ -55,11 +71,11 @@ class BrogueBot:
                 os.path.join(self.image_directory, f"screenshot_{self.step_count}.png")
             )
         else:
-            print("screenshot is None")
+            logger.warning("screenshot is None")
         vlm_response = self.vlm_agent.generate_content(screenshot)
-        print(f"vlm_agent: {vlm_response}")
+        logger.info(f"vlm_agent: {vlm_response}")
         policy_response = self.policy_agent.generate_content(vlm_response)
-        print(f"policy_agent: {policy_response}")
+        logger.info(f"policy_agent: {policy_response}")
         actions = policy_response.split("\n")
         commands = self.action_mapper.get_commands_sequence(actions)
         self.hardware_controller.execute_sequence(commands)
